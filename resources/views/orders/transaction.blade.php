@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <title>Sistem Informasi Laundry - POS</title>
     @include('orders.sections.styles')
 </head>
+
 <body>
     <div class="container">
         <!-- Header -->
@@ -42,15 +44,16 @@
                 <h2>🛒 Transaksi Baru</h2>
 
                 <form id="transactionForm">
-                    {{-- Customer Info--}}
+                    {{-- Customer Info --}}
                     <div class="form-group">
-                        <label for="customerName">Nama Pelanggan</label>
-                        <select id="customerName" class="form-control" onchange="fillCustomerData()" required>
+                        <label for="customerId">Nama Pelanggan</label>
+                        <select id="customerId" class="form-control" onchange="fillCustomerData()" required>
                             <option value="">-- Pilih Pelanggan --</option>
-                            @foreach($customers as $customer)
-                            <option value="{{ $customer->id }}" data-phone="{{ $customer->phone }}" data-address="{{ $customer->address }}">
-                                {{ $customer->customer_name }}
-                            </option>
+                            @foreach ($customers as $customer)
+                                <option value="{{ $customer->id }}" data-phone="{{ $customer->phone }}"
+                                    data-address="{{ $customer->address }}">
+                                    {{ $customer->customer_name }}
+                                </option>
                             @endforeach
                         </select>
                     </div>
@@ -58,11 +61,11 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="customerPhone">No. Telepon</label>
-                            <input type="tel" id="customerPhone" class="form-control" readonly>
+                            <input type="tel" id="customerPhone" required readonly>
                         </div>
                         <div class="form-group">
                             <label for="customerAddress">Alamat</label>
-                            <input type="text" id="customerAddress" class="form-control" readonly>
+                            <input type="text" id="customerAddress" readonly>
                         </div>
                     </div>
 
@@ -70,17 +73,17 @@
                     <div class="form-group">
                         <label>Pilih Layanan</label>
                         <div class="services-grid">
-                            @foreach($services as $service)
-                            <button type="button" class="service-card" onclick="addService('{{ $service->service_name }}', {{ $service->price }})">
-                                <h3>{{ $service->service_name }}</h3>
-                                {{-- <h3>{{ $service->icon ?? '🧺' }} {{ $service->name }}</h3> --}}
-                                <div class="price">Rp. {{ number_format($service->price, 0, ',', '.') }}/kg</div>
-                            </button>
+                            @foreach ($services as $service)
+                                <button type="button" class="service-card"
+                                    onclick="addService('{{ $service->id }}', {{ $service->price }})">
+                                    <h3>{{ $service->service_name }}</h3>
+                                    <div class="price">Rp. {{ number_format($service->price, 0, ',', '.') }}/kg</div>
+                                </button>
                             @endforeach
                         </div>
                     </div>
 
-                    <!-- Weight & Type -->
+                    {{-- Weight & Type --}}
                     <div class="form-row">
                         <div class="form-group">
                             <label for="serviceWeight">Berat/Jumlah</label>
@@ -90,8 +93,8 @@
                             <label for="serviceType">Jenis Layanan</label>
                             <select id="serviceType" required>
                                 <option value="">Pilih Layanan</option>
-                                @foreach($services as $service)
-                                <option value="{{ $service->service_name }}">{{ $service->service_name }}</option>
+                                @foreach ($services as $service)
+                                    <option value="{{ $service->id }}">{{ $service->service_name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -102,7 +105,8 @@
                         <textarea id="notes" rows="3" placeholder="Catatan khusus untuk pesanan..."></textarea>
                     </div>
 
-                    <button type="button" class="btn btn-primary" onclick="addToCart()" style="width: 100%; margin-bottom: 10px;">
+                    <button type="button" class="btn btn-primary" onclick="addToCart()"
+                        style="width: 100%; margin-bottom: 10px;">
                         ➕ Tambah ke Keranjang
                     </button>
                 </form>
@@ -127,7 +131,8 @@
                     <div class="total-section">
                         <h3>Total Pembayaran</h3>
                         <div class="total-amount" id="totalAmount">Rp 0</div>
-                        <button class="btn btn-success" onclick="processTransaction()" style="width: 100%; margin-top: 15px;">
+                        <button class="btn btn-success" onclick="processTransaction()"
+                            style="width: 100%; margin-top: 15px;">
                             💳 Proses Transaksi
                         </button>
                     </div>
@@ -184,4 +189,4 @@
         </div>
     </div>
 
-    @include('orders.sections.script');
+    @include('orders.sections.scripts')

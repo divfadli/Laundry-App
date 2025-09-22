@@ -16,15 +16,6 @@ Route::get('/', fn() => redirect()->route('login'));
 Route::get('/login', [AuthController::class, 'index'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-// Route::get('test', fn() => view('orders.transaction'));
-Route::get('test', [TransOrderController::class, 'showTransaction']);
-Route::get('loadTransaction', [TransOrderController::class, 'getTransaction'])->name('orders.loadTransaction');
-Route::post('newstore', [TransOrderController::class, 'newStore'])->name('orders.newstore');
-Route::post('/orders/{id}/pickup', [TransOrderController::class, 'pickUpLaundry'])
-    ->name('orders.pickup_laundry');
-
-Route::resource('orders', TransOrderController::class);
-
 
 // Semua route harus login
 Route::middleware(['auth'])->group(function () {
@@ -52,8 +43,13 @@ Route::middleware(['auth'])->group(function () {
 
     // Transaksi Laundry (Admin + Operator)
     Route::middleware(['role:Administrator,Operator'])->group(function () {
+        Route::resource('orders', TransOrderController::class);
         Route::get('/orders/{order}/print', [TransOrderController::class, 'print'])->name('orders.print');
         Route::patch('/orders/{order}/complete', [TransOrderController::class, 'complete'])->name('orders.complete');
+        Route::get('transaction', [TransOrderController::class, 'showTransaction'])->name('orders.transaction');
+        Route::post('laundry_post', [TransOrderController::class, 'OrderStore'])->name('orders.laundry_post');
+        Route::get('get-all-data-orders', [TransOrderController::class, 'getAllDataOrders'])->name('orders.getAllDataOrders');
+        Route::put('/orders/{id}/status', [TransOrderController::class, 'pickupLaundry'])->name('orders.pickupLaundry');
     });
 
     // Laporan (Pimpinan + Administrator)

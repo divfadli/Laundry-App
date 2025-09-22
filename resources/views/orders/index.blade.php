@@ -9,7 +9,7 @@
         </h4>
 
         @if (auth()->user()->isAdmin() || auth()->user()->isOperator())
-            <a href="{{ route('orders.create') }}" class="btn btn-primary btn-sm shadow-sm">
+            <a href="{{ route('orders.transaction') }}" class="btn btn-primary btn-sm shadow-sm">
                 <i class="bi bi-plus-lg me-1"></i> Tambah Transaksi
             </a>
         @endif
