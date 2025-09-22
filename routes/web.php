@@ -16,6 +16,15 @@ Route::get('/', fn() => redirect()->route('login'));
 Route::get('/login', [AuthController::class, 'index'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+// Route::get('test', fn() => view('orders.transaction'));
+Route::get('test', [TransOrderController::class, 'showTransaction']);
+Route::get('loadTransaction', [TransOrderController::class, 'getTransaction'])->name('orders.loadTransaction');
+Route::post('newstore', [TransOrderController::class, 'newStore'])->name('orders.newstore');
+Route::post('/orders/{id}/pickup', [TransOrderController::class, 'pickUpLaundry'])
+    ->name('orders.pickup_laundry');
+
+Route::resource('orders', TransOrderController::class);
+
 
 // Semua route harus login
 Route::middleware(['auth'])->group(function () {
@@ -43,7 +52,6 @@ Route::middleware(['auth'])->group(function () {
 
     // Transaksi Laundry (Admin + Operator)
     Route::middleware(['role:Administrator,Operator'])->group(function () {
-        Route::resource('orders', TransOrderController::class);
         Route::get('/orders/{order}/print', [TransOrderController::class, 'print'])->name('orders.print');
         Route::patch('/orders/{order}/complete', [TransOrderController::class, 'complete'])->name('orders.complete');
     });
@@ -54,5 +62,4 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/reports/export/pdf', [ReportController::class, 'exportPdf'])->name('reports.export.pdf');
         Route::get('/reports/export/excel', [ReportController::class, 'exportExcel'])->name('reports.export.excel');
     });
-
 });

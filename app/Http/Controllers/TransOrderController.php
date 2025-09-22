@@ -183,10 +183,7 @@ class TransOrderController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
-    {
-
-    }
+    public function update(Request $request, string $id) {}
 
     /**
      * Selesaikan Order (hanya jika pembayaran cukup)
@@ -231,4 +228,163 @@ class TransOrderController extends Controller
         }
     }
 
+    public function showTransaction()
+    {
+        $customers = Customers::all();
+        $services = TypeOfServices::all();
+        $orders = TransOrders::all();
+        $transactions = TransOrders::with(['customer', 'transOrderDetails.typeOfService'])->get();
+        $data = $transactions->map(function ($trx) {
+            return [
+                'id' => $trx->order_code,
+                'customer' => [
+                    'id' =>  $trx->customer->id ?? null,
+                    'name'    => $trx->customer->customer_name ?? null,
+                    'phone'   => $trx->customer->phone ?? null,
+                    'address' => $trx->customer->address ?? null,
+                ],
+                'items' => $trx->transOrderDetails->map(function ($detail) {
+                    return [
+                        'service'  => $detail->typeOfService->service_name ?? null,
+                        'weight'   => $detail->qty,
+                        'price'    => $detail->typeOfService->price,
+                        'subtotal' => $detail->subtotal,
+                        'notes'    => $detail->notes,
+                    ];
+                }),
+                'total'  => $trx->total,
+                'date'   => $trx->order_date ? $trx->order_date->toISOString() : null,
+                'status' => $trx->order_status,
+                'status_badge' => $trx->getStatusTextAttribute()
+            ];
+        });
+
+        return view('orders.transaction', compact('customers', 'services', 'orders', 'data'));
+    }
+
+    public function getTransaction()
+    {
+        $transactions = TransOrders::with(['customer', 'transOrderDetails.typeOfService'])->get();
+
+        $data = $transactions->map(function ($trx) {
+            return [
+                'id' => $trx->order_code,
+                'customer' => [
+                    'id' =>  $trx->customer->id ?? null,
+                    'name'    => $trx->customer->customer_name ?? null,
+                    'phone'   => $trx->customer->phone ?? null,
+                    'address' => $trx->customer->address ?? null,
+                ],
+                'items' => $trx->transOrderDetails->map(function ($detail) {
+                    return [
+                        'service'  => $detail->typeOfService->service_name ?? null,
+                        'weight'   => $detail->qty,
+                        'price'    => $detail->typeOfService->price,
+                        'subtotal' => $detail->subtotal,
+                        'notes'    => $detail->notes,
+                    ];
+                }),
+                'total'  => $trx->total,
+                'date'   => $trx->order_date ? $trx->order_date->toISOString() : null,
+                'status' => $trx->order_status,
+                'status_badge' => $trx->getStatusTextAttribute()
+            ];
+        });
+
+        return response()->json($data);
+    }
+    public function newStore(Request $request)
+    {
+        // return $request;
+        $request->validate([
+            'id'           => 'required|string',
+            'customer.id'  => 'required|exists:customers,id',
+            'items'        => 'required|array|min:1',
+            'total'        => 'required|numeric',
+            'order_date'   => 'required|date',
+            'order_status' => 'required|bool'
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // Simpan order
+            $order = TransOrders::create([
+                'order_code'    => $request->id,
+                'id_customer'   => $request->customer['id'],
+                'order_date'    => $request->order_date,
+                'order_status'  => $request->order_status,
+                'total'         => $request->total,
+            ]);
+
+            // Simpan detail item
+            foreach ($request->items as $item) {
+                TransOrderDetails::create([
+                    'id_order'   => $order->id,
+                    'id_service' => $item['id_service'],
+                    'qty'        => $item['qty'],
+                    'price'      => $item['price'],
+                    'subtotal'   => $item['subtotal'],
+                    'notes'      => $item['notes'] ?? null,
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Transaksi berhasil disimpan',
+                'data'    => $order->load('transOrderDetails.typeOfService', 'customer')
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan transaksi',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function pickUpLaundry(Request $request, string $id)
+    {
+        $request->validate([
+            'order_pay' => 'required|numeric|min:0',
+            'notes' => 'nullable|string',
+        ]);
+
+        try {
+            DB::transaction(function () use ($request, $id) {
+                $order = TransOrders::findOrFail($id);
+
+                if ($request->order_pay < $order->total) {
+                    throw new \Exception('Pembayaran tidak mencukupi!');
+                }
+
+                $orderChange = $request->order_pay - $order->total;
+
+                $order->update([
+                    'order_status' => 1,
+                    'order_pay' => $request->order_pay,
+                    'order_change' => $orderChange,
+                ]);
+
+                TransLaundryPickups::create([
+                    'id_order' => $order->id,
+                    'id_customer' => $order->id_customer,
+                    'pickup_date' => Carbon::now()->toDateString(),
+                    'notes' => $request->notes ?? null,
+                ]);
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Order berhasil diselesaikan dan pickup tersimpan'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 422);
+        }
+    }
 }

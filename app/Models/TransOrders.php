@@ -46,7 +46,7 @@ class TransOrders extends Model
 
     public function getStatusTextAttribute()
     {
-        return $this->order_status == 0 ? 'Baru' : 'Sudah diambil';
+        return $this->order_status == 0 ? 'baru' : 'completed';
     }
 
     public function getStatusClassAttribute()
