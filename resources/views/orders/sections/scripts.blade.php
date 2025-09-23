@@ -8,8 +8,10 @@
             document.getElementById("customerAddress").value = option.getAttribute("data-address") || "";
         }
 
-        let services = {!! $services !!};
-        // let services = @json($services);
+        // let services = {
+        //     !!$services!!
+        // };
+        let services = @json($services);
 
         let cart = [];
         let transactions = [];
@@ -106,11 +108,11 @@
                     <div style="margin-bottom: 20px;">
                         <strong>Detail Pesanan:</strong><br>
                         ${transaction.trans_order_details.map(item => `
-                                                                                                        <div class="receipt-item">
-                                                                                                            <span>${item.type_of_service.service_name} (${item.qty}kg)</span>
-                                                                                                            <span>Rp ${parseFloat(item.subtotal ?? 0).toLocaleString('id-ID')}</span>
-                                                                                                        </div>
-                                                                                                    `).join('')}
+                                                                                                            <div class="receipt-item">
+                                                                                                                <span>${item.type_of_service.service_name} (${item.qty}kg)</span>
+                                                                                                                <span>Rp ${parseFloat(item.subtotal ?? 0).toLocaleString('id-ID')}</span>
+                                                                                                            </div>
+                                                                                                        `).join('')}
                     </div>
                     
                     <div class="receipt-total">
@@ -266,24 +268,24 @@
         <h2>📋 Semua Transaksi</h2>
         <div style="max-height: 400px; overflow-y: auto;">
             ${transactions.map(transaction => `
-                    <div class="transaction-item">
-                        <h4>${transaction.id} - ${transaction.customer.name}</h4>
-                        <p>📞 ${formatPhoneNumberDynamic(transaction.customer.phone)}</p>
-                        <p>🛍️ ${transaction.items.map(item => 
-                            `${item.service} - ${item.weight}${item.service.includes('Sepatu') ? 'pasang' : item.service.includes('Karpet') ? 'm²' : 'kg'}`
-                        ).join(', ')}</p>
-                        <p>💰 Rp ${parseFloat(transaction.total ?? 0).toLocaleString('id-ID')}</p>
-                        <p>📅 ${new Date(transaction.date).toLocaleString('id-ID')}</p>
-                        <span class="status-badge status-${transaction.status}">${getStatusText(transaction.status)}</span>
-                        <button 
-                            class="btn btn-primary" 
-                            onclick="updateTransactionStatus('${transaction.id}')" 
-                            style="margin-top: 10px; padding: 5px 15px; font-size: 12px;"
-                            ${transaction.status === 'completed' ? 'disabled style="background:gray; cursor:not-allowed;"' : ''}>
-                            📝 Update Status
-                        </button>
-                    </div>
-                `).join('')}
+                        <div class="transaction-item">
+                            <h4>${transaction.id} - ${transaction.customer.name}</h4>
+                            <p>📞 ${formatPhoneNumberDynamic(transaction.customer.phone)}</p>
+                            <p>🛍️ ${transaction.items.map(item => 
+                                `${item.service} - ${item.weight}${item.service.includes('Sepatu') ? 'pasang' : item.service.includes('Karpet') ? 'm²' : 'kg'}`
+                            ).join(', ')}</p>
+                            <p>💰 Rp ${parseFloat(transaction.total ?? 0).toLocaleString('id-ID')}</p>
+                            <p>📅 ${new Date(transaction.date).toLocaleString('id-ID')}</p>
+                            <span class="status-badge status-${transaction.status}">${getStatusText(transaction.status)}</span>
+                            <button 
+                                class="btn btn-primary" 
+                                onclick="updateTransactionStatus('${transaction.id}')" 
+                                style="margin-top: 10px; padding: 5px 15px; font-size: 12px;"
+                                ${transaction.status === 'completed' ? 'disabled style="background:gray; cursor:not-allowed;"' : ''}>
+                                📝 Update Status
+                            </button>
+                        </div>
+                    `).join('')}
         </div>
     `;
 
@@ -346,12 +348,12 @@
                     </thead>
                     <tbody>
                         ${Object.entries(serviceStats).map(([service, stats]) => `
-                                                                                <tr>
-                                                                                    <td>${service}</td>
-                                                                                    <td>${stats.count}</td>
-                                                                                    <td>Rp. ${stats.revenue.toLocaleString('id-ID')}</td>
-                                                                                </tr>
-                                                                            `).join('')}
+                                                                                    <tr>
+                                                                                        <td>${service}</td>
+                                                                                        <td>${stats.count}</td>
+                                                                                        <td>Rp. ${stats.revenue.toLocaleString('id-ID')}</td>
+                                                                                    </tr>
+                                                                                `).join('')}
                     </tbody>
                 </table>
             `;
@@ -430,14 +432,12 @@
             if (!transaction) return;
 
             const statusOptions = [{
-                    value: '0',
-                    text: 'Process'
-                },
-                {
-                    value: '1',
-                    text: 'Completed'
-                }
-            ];
+                value: '0',
+                text: 'Process'
+            }, {
+                value: '1',
+                text: 'Completed'
+            }];
 
             const statusHtml = `
                 <h2>📝 Update Status Transaksi</h2>
@@ -448,10 +448,10 @@
                     <label>Pilih Status Baru:</label>
                     <select id="newStatus" style="width: 100%; padding: 10px; margin: 10px 0;">
                         ${statusOptions.map(option => `
-                                                                <option value="${option.value}" ${transaction.order_status === option.value ? 'selected' : ''}>
-                                                                    ${option.text}
-                                                                </option>
-                                                            `).join('')}
+                                                                    <option value="${option.value}" ${transaction.order_status === option.value ? 'selected' : ''}>
+                                                                        ${option.text}
+                                                                    </option>
+                                                                `).join('')}
                     </select>
                 </div>
                 
@@ -503,6 +503,7 @@
 
         function closeModal() {
             document.getElementById('transactionModal').style.display = 'none';
+            window.location.replace("{{ route('orders.index') }}")
         }
 
         function formatPhoneNumberDynamic(number) {
