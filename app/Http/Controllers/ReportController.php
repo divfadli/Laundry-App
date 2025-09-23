@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exports\OrdersExport;
 use App\Models\TransOrders;
-use Barryvdh\DomPDF\PDF;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
@@ -48,11 +48,10 @@ class ReportController extends Controller
 
     public function exportPdf(Request $request)
     {
+        // Ambil data dengan filter tanggal (custom sesuai kebutuhanmu)
         $orders = $this->getFilteredOrders($request);
 
-        $pdf = app(PDF::class)
-            ->loadView('reports.export_pdf', compact('orders'))
-            ->setPaper('a4', 'landscape');
+        $pdf = PDF::loadView('reports.export_pdf', compact('orders'))->setPaper('a4', 'landscape'); // bisa portrait kalau mau
 
         $filename = 'laporan_penjualan_' . Carbon::now()->format('Ymd_His') . '.pdf';
         return $pdf->download($filename);

@@ -235,7 +235,7 @@
                     <p>📞 ${formatPhoneNumberDynamic(transaction.customer.phone)}</p>
                     <p>🛍️ ${transaction.items.map(item => `${item.service} - ${item.weight}${item.service.includes('Sepatu') ? 'pasang' : item.service.includes('Karpet') ? 'm²' : 'kg'}`).join(', ')}</p>
                     <p>💰 Rp. ${parseFloat(transaction.total ?? 0).toLocaleString('id-ID')}</p>
-                    <p>📅 ${new Date(transaction.date).toLocaleString('id-ID')}</p>
+                    <p>📅 ${new Date(transaction.date).toLocaleString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                     <span class="status-badge status-${transaction.status}">${getStatusText(transaction.status)}</span>
                 </div>
             `).join('');
