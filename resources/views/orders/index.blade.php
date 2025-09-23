@@ -44,7 +44,8 @@
                                 <td class="text-success fw-semibold">Rp {{ number_format($order->total, 0, ',', '.') }}</td>
                                 <td>
                                     <span class="badge rounded-pill {{ $order->status_class }} py-2 px-3">
-                                        {{ $order->status_text }}
+                                        {{ $order->order_status == 0 ? 'Process' : 'Completed' }}
+
                                     </span>
                                 </td>
                                 <td class="text-center">
@@ -90,3 +91,4 @@
         });
     </script>
 @endpush
+

@@ -183,9 +183,7 @@ class TransOrderController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
-    {
-    }
+    public function update(Request $request, string $id) {}
 
     /**
      * Selesaikan Order (hanya jika pembayaran cukup)
@@ -254,7 +252,8 @@ class TransOrderController extends Controller
             $order = TransOrders::create([
                 'order_code' => $request->id,
                 'id_customer' => $request->customer['id'],
-                'order_date' => $request->order_date,
+                'order_date' => Carbon::parse($request->order_date)->format('Y-m-d H:i:s'),
+                'order_end_date' => Carbon::now()->addDays(3)->toDateString(),
                 'order_status' => $request->order_status,
                 'total' => $request->total
             ]);
@@ -330,7 +329,7 @@ class TransOrderController extends Controller
                 $order->update([
                     'order_pay' => $order->total,
                     'order_status' => $request->order_status,
-                    'order_end_date' => Carbon::now()->toDateString()
+                    // 'order_end_date' => Carbon::now()->toDateString()
                 ]);
 
                 if ($request->order_status == 1) {
@@ -353,6 +352,5 @@ class TransOrderController extends Controller
                 'message' => 'Error' . $th->getMessage(),
             ], 500);
         }
-
     }
 }

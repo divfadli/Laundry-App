@@ -108,11 +108,11 @@
                     <div style="margin-bottom: 20px;">
                         <strong>Detail Pesanan:</strong><br>
                         ${transaction.trans_order_details.map(item => `
-                                                                                                            <div class="receipt-item">
-                                                                                                                <span>${item.type_of_service.service_name} (${item.qty}kg)</span>
-                                                                                                                <span>Rp ${parseFloat(item.subtotal ?? 0).toLocaleString('id-ID')}</span>
-                                                                                                            </div>
-                                                                                                        `).join('')}
+                            <div class="receipt-item">
+                                <span>${item.type_of_service.service_name} (${item.qty}kg)</span>
+                                <span>Rp ${parseFloat(item.subtotal ?? 0).toLocaleString('id-ID')}</span>
+                            </div>
+                        `).join('')}
                     </div>
                     
                     <div class="receipt-total">
@@ -124,7 +124,7 @@
                     
                     <div style="text-align: center; margin-top: 20px;">
                         <p>Terima kasih atas kepercayaan Anda!</p>
-                        <p>Barang akan siap dalam 1-2 hari kerja</p>
+                        <p>Barang akan siap dalam 1-3 hari kerja</p>
                     </div>
                 </div>
                 
@@ -493,9 +493,11 @@
                 const result = await res.json();
                 alert("Status Transaksi Berhasil diupdate!!")
 
-                loadDataTransactions();
+                window.location.replace("{{ route('orders.index') }}")
 
-                closeModal();
+                // loadDataTransactions();
+
+                // closeModal();
             } catch (error) {
                 console.error("Gagal Menyimpan Data Transaksi: ", error)
             }
@@ -503,8 +505,8 @@
 
         function closeModal() {
             document.getElementById('transactionModal').style.display = 'none';
-            window.location.replace("{{ route('orders.index') }}")
         }
+
 
         function formatPhoneNumberDynamic(number) {
             return number.match(/.{1,3}/g).join("-");
