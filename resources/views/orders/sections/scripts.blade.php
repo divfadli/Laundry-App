@@ -108,11 +108,11 @@
                     <div style="margin-bottom: 20px;">
                         <strong>Detail Pesanan:</strong><br>
                         ${transaction.trans_order_details.map(item => `
-                            <div class="receipt-item">
-                                <span>${item.type_of_service.service_name} (${item.qty}kg)</span>
-                                <span>Rp ${parseFloat(item.subtotal ?? 0).toLocaleString('id-ID')}</span>
-                            </div>
-                        `).join('')}
+                                                                            <div class="receipt-item">
+                                                                                <span>${item.type_of_service.service_name} (${item.qty}kg)</span>
+                                                                                <span>Rp ${parseFloat(item.subtotal ?? 0).toLocaleString('id-ID')}</span>
+                                                                            </div>
+                                                                        `).join('')}
                     </div>
                     
                     <div class="receipt-total">
@@ -267,15 +267,15 @@
             const allTransactionsHtml = `
         <h2>📋 Semua Transaksi</h2>
         <div style="max-height: 400px; overflow-y: auto;">
-            ${transactions.map(transaction => `
+            ${transactions.reverse().map(transaction => `
                         <div class="transaction-item">
                             <h4>${transaction.id} - ${transaction.customer.name}</h4>
                             <p>📞 ${formatPhoneNumberDynamic(transaction.customer.phone)}</p>
                             <p>🛍️ ${transaction.items.map(item => 
                                 `${item.service} - ${item.weight}${item.service.includes('Sepatu') ? 'pasang' : item.service.includes('Karpet') ? 'm²' : 'kg'}`
                             ).join(', ')}</p>
-                            <p>💰 Rp ${parseFloat(transaction.total ?? 0).toLocaleString('id-ID')}</p>
-                            <p>📅 ${new Date(transaction.date).toLocaleString('id-ID')}</p>
+                            <p>💰 Rp. ${parseFloat(transaction.total ?? 0).toLocaleString('id-ID')}</p>
+                            <p>📅 ${new Date(transaction.date).toLocaleString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                             <span class="status-badge status-${transaction.status}">${getStatusText(transaction.status)}</span>
                             <button 
                                 class="btn btn-primary" 
@@ -348,12 +348,12 @@
                     </thead>
                     <tbody>
                         ${Object.entries(serviceStats).map(([service, stats]) => `
-                                                                                    <tr>
-                                                                                        <td>${service}</td>
-                                                                                        <td>${stats.count}</td>
-                                                                                        <td>Rp. ${stats.revenue.toLocaleString('id-ID')}</td>
-                                                                                    </tr>
-                                                                                `).join('')}
+                                                                                                                                                                <tr>
+                                                                                                                                                                    <td>${service}</td>
+                                                                                                                                                                    <td>${stats.count}</td>
+                                                                                                                                                                    <td>Rp. ${stats.revenue.toLocaleString('id-ID')}</td>
+                                                                                                                                                                </tr>
+                                                                                                                                                            `).join('')}
                     </tbody>
                 </table>
             `;
@@ -432,46 +432,136 @@
             if (!transaction) return;
 
             const statusOptions = [{
-                value: '0',
-                text: 'Process'
-            }, {
-                value: '1',
-                text: 'Completed'
-            }];
+                    value: '0',
+                    text: 'Process'
+                },
+                {
+                    value: '1',
+                    text: 'Completed'
+                }
+            ];
 
             const statusHtml = `
-                <h2>📝 Update Status Transaksi</h2>
-                <h3>${transaction.id} - ${transaction.customer.name}</h3>
-                <p>Status saat ini: <span class="status-badge status-${transaction.status}">${getStatusText(transaction.status)}</span></p>
-                
+        <div class="card">
+            <h2>📝 Update Status Transaksi</h2>
+            <h3 style="margin-bottom: 10px;">${transaction.id} - ${transaction.customer.name}</h3>
+            <p>Status saat ini: 
+                <span class="status-badge status-${transaction.status}">
+                    ${getStatusText(transaction.status)}
+                </span>
+            </p>
+
+            <div class="form-group">
+                <label for="newStatus">Pilih Status Baru:</label>
+                <select id="newStatus" onchange="togglePaymentForm(${transaction.total})">
+                    ${statusOptions.map(option => `
+                        <option value="${option.value}" ${transaction.order_status === option.value ? 'selected' : ''}>
+                            ${option.text}
+                        </option>
+                    `).join('')}
+                </select>
+            </div>
+
+            <!-- FORM PEMBAYARAN + CATATAN (MUNCUL JIKA COMPLETED) -->
+            <div id="paymentForm" style="display:none; margin-top: 20px;">
                 <div class="form-group">
-                    <label>Pilih Status Baru:</label>
-                    <select id="newStatus" style="width: 100%; padding: 10px; margin: 10px 0;">
-                        ${statusOptions.map(option => `
-                                                                    <option value="${option.value}" ${transaction.order_status === option.value ? 'selected' : ''}>
-                                                                        ${option.text}
-                                                                    </option>
-                                                                `).join('')}
-                    </select>
+                    <label for="order_pay">💵 Uang Bayar</label>
+                    <div class="input-group">
+                        <span class="input-group-text">Rp</span>
+                        <input type="number" id="order_pay" class="form-control form-control-lg text-end"
+                            min="${transaction.total}" placeholder="Masukkan nominal..."
+                            oninput="calculateChange(${transaction.total})">
+                    </div>
                 </div>
-                
-                <div style="text-align: center; margin-top: 20px;">
-                    <button class="btn btn-success" onclick="saveStatusUpdate('${transactionId}')">
-                        ✅ Simpan Update
-                    </button>
-                    <button class="btn btn-danger" onclick="closeModal()" style="margin-left: 10px;">
-                        ❌ Batal
-                    </button>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Total</label>
+                        <input type="text" id="order_total" class="form-control form-control-lg text-end"
+                            value="Rp. ${parseFloat(transaction.total).toLocaleString('id-ID')}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Kembalian</label>
+                        <input type="text" id="order_change" class="form-control form-control-lg text-end" readonly>
+                    </div>
                 </div>
-            `;
+
+                <div class="form-group" style="margin-top: 15px;">
+                    <label for="pickup_notes">📝 Catatan</label>
+                    <textarea id="pickup_notes" class="form-control form-control-lg" rows="3"
+                        placeholder="Tambahkan catatan transaksi..."></textarea>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 20px;">
+                <button id="btnSave" class="btn btn-success" onclick="saveStatusUpdate('${transactionId}', ${transaction.total})">
+                    ✅ Simpan Update
+                </button>
+                <button class="btn btn-danger" onclick="closeModal()" style="margin-left: 10px;">
+                    ❌ Batal
+                </button>
+            </div>
+        </div>
+    `;
 
             document.getElementById('modalContent').innerHTML = statusHtml;
             document.getElementById('transactionModal').style.display = 'block';
+
+            // kalau status awalnya sudah Completed, tampilkan form langsung
+            if (transaction.order_status === '1') {
+                togglePaymentForm(transaction.total);
+            }
         }
 
-        async function saveStatusUpdate(transactionId) {
+        function togglePaymentForm(total) {
+            const newStatus = document.getElementById('newStatus').value;
+            const paymentForm = document.getElementById('paymentForm');
+            const btnSave = document.getElementById('btnSave');
+
+            if (newStatus === '1') {
+                paymentForm.style.display = 'block';
+
+                const payInput = document.getElementById('order_pay');
+                const pay = payInput ? parseInt(payInput.value) || 0 : 0;
+
+                if (pay >= total) {
+                    btnSave.disabled = false;
+                    calculateChange(total);
+                } else {
+                    btnSave.disabled = true;
+                }
+            } else {
+                paymentForm.style.display = 'none';
+                btnSave.disabled = false;
+            }
+        }
+
+        function calculateChange(total) {
+            const pay = parseInt(document.getElementById('order_pay').value) || 0;
+            const change = pay - total;
+            const btnSave = document.getElementById('btnSave');
+
+            document.getElementById('order_change').value = change >= 0 ? `Rp. ${change.toLocaleString('id-ID')}` : 'Rp. 0';
+            btnSave.disabled = pay < total;
+        }
+
+        async function saveStatusUpdate(transactionId, total) {
             let url = `{{ route('orders.pickupLaundry', ':id') }}`.replace(':id', transactionId);
             const newStatus = document.getElementById('newStatus').value;
+
+            let payload = {
+                order_status: newStatus
+            };
+
+            if (newStatus === '1') {
+                const pay = parseInt(document.getElementById('order_pay').value) || 0;
+                const change = pay - total;
+                const notes = document.getElementById('pickup_notes').value || "";
+
+                payload.order_pay = pay;
+                payload.order_change = change >= 0 ? change : 0;
+                payload.notes = notes;
+            }
 
             try {
                 const res = await fetch(url, {
@@ -481,32 +571,26 @@
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute(
                             "content")
                     },
-                    body: JSON.stringify({
-                        order_status: newStatus
-                    })
-                })
+                    body: JSON.stringify(payload)
+                });
 
                 if (!res.ok) {
-                    throw new Error(`HTTP error!! Status: ${res.status}`)
+                    throw new Error(`HTTP error!! Status: ${res.status}`);
                 }
 
                 const result = await res.json();
-                alert("Status Transaksi Berhasil diupdate!!")
-
-                window.location.replace("{{ route('orders.index') }}")
-
-                // loadDataTransactions();
-
-                // closeModal();
+                alert("✅ Status Transaksi Berhasil diupdate!");
+                loadDataTransactions();
+                closeModal();
+                // window.location.replace("{{ route('orders.index') }}");
             } catch (error) {
-                console.error("Gagal Menyimpan Data Transaksi: ", error)
+                console.error("❌ Gagal Menyimpan Data Transaksi: ", error);
             }
         }
 
         function closeModal() {
             document.getElementById('transactionModal').style.display = 'none';
         }
-
 
         function formatPhoneNumberDynamic(number) {
             return number.match(/.{1,3}/g).join("-");

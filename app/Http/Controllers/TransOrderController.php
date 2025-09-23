@@ -183,7 +183,9 @@ class TransOrderController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id) {}
+    public function update(Request $request, string $id)
+    {
+    }
 
     /**
      * Selesaikan Order (hanya jika pembayaran cukup)
@@ -192,6 +194,7 @@ class TransOrderController extends Controller
     {
         $request->validate([
             'order_pay' => 'required|numeric|min:0',
+            'order_change' => 'required|numeric|min:0',
             'notes' => 'nullable|string', // optional untuk pickup
         ]);
 
@@ -203,12 +206,10 @@ class TransOrderController extends Controller
                     throw new \Exception('Pembayaran tidak mencukupi!');
                 }
 
-                $orderChange = $request->order_pay - $order->total;
-
                 // Update status order
                 $order->update([
                     'order_pay' => $request->order_pay,
-                    'order_change' => $orderChange,
+                    'order_change' => $request->order_change,
                     'order_status' => 1, // selesai
                 ]);
 
@@ -319,7 +320,10 @@ class TransOrderController extends Controller
     public function pickupLaundry(Request $request, $id)
     {
         $request->validate([
-            'order_status' => 'required|in:0,1' // misalnya ada banyak status
+            'order_status' => 'required|in:0,1', // misalnya ada banyak status
+            'order_pay' => 'nullable|numeric|min:0',
+            'order_change' => 'nullable|numeric|min:0',
+            'notes' => 'nullable|string'
         ]);
 
         try {
@@ -327,7 +331,8 @@ class TransOrderController extends Controller
                 $order = TransOrders::where('order_code', $id)->firstOrFail();
 
                 $order->update([
-                    'order_pay' => $order->total,
+                    'order_pay' => $request->order_pay ?? 0,
+                    'order_change' => $request->order_change ?? 0,
                     'order_status' => $request->order_status,
                     // 'order_end_date' => Carbon::now()->toDateString()
                 ]);

@@ -13,9 +13,18 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1>🧺 Sistem Informasi Laundry</h1>
-            <p class="subtitle">Point of Sales System - Kelola Transaksi Laundry dengan Mudah</p>
+            <div class="header-content">
+                <!-- Tombol Back -->
+                <a href="{{ route('orders.index') }}" class="btn-back">⬅️ Kembali</a>
+
+                <!-- Judul dan Subtitle -->
+                <div class="header-title">
+                    <h1>🧺 Sistem Informasi Laundry</h1>
+                    <p class="subtitle">Point of Sales System - Kelola Transaksi Laundry dengan Mudah</p>
+                </div>
+            </div>
         </div>
+
 
         <!-- Statistics -->
         <div class="stats-grid">

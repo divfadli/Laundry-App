@@ -27,6 +27,41 @@
          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
      }
 
+     .header-content {
+         display: flex;
+         align-items: center;
+         /* sejajarkan vertikal */
+         justify-content: center;
+         /* judul tetap di tengah */
+         position: relative;
+     }
+
+     .header-title {
+         text-align: center;
+     }
+
+     .btn-back {
+         position: absolute;
+         left: 20px;
+         /* tempel di sisi kiri */
+         background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+         color: #fff;
+         padding: 10px 18px;
+         border-radius: 8px;
+         text-decoration: none;
+         font-weight: 600;
+         font-size: 14px;
+         box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+         transition: all 0.3s ease;
+     }
+
+     .btn-back:hover {
+         transform: translateY(-2px);
+         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+         background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+     }
+
+
      .header h1 {
          text-align: center;
          color: #4a5568;
@@ -40,6 +75,8 @@
          color: #718096;
          font-size: 1.1em;
      }
+
+
 
      .main-content {
          display: grid;
