@@ -172,9 +172,9 @@
             <button class="btn btn-primary" onclick="showReports()" style="margin: 0 10px;">
                 📈 Laporan Penjualan
             </button>
-            <button class="btn btn-warning" onclick="manageServices()" style="margin: 0 10px;">
+            {{-- <button class="btn btn-warning" onclick="manageServices()" style="margin: 0 10px;">
                 ⚙️ Kelola Layanan
-            </button>
+            </button> --}}
             <button class="btn btn-danger" onclick="clearCart()" style="margin: 0 10px;">
                 🗑️ Bersihkan Keranjang
             </button>
