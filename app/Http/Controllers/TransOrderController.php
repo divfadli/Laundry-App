@@ -183,9 +183,7 @@ class TransOrderController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
-    {
-    }
+    public function update(Request $request, string $id) {}
 
     /**
      * Selesaikan Order (hanya jika pembayaran cukup)

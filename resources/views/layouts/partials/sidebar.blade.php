@@ -76,7 +76,7 @@
         @endif
 
         {{-- Laporan --}}
-        @if (auth()->user()->isPimpinan() || auth()->user()->isAdmin())
+        @if (auth()->user()->isPimpinan())
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}"
                     href="{{ route('reports.index') }}">

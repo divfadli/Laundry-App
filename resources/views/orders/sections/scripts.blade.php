@@ -1,3 +1,6 @@
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  @include('sweetalert::alert')
+
     <script>
         // Isi Data Customer
         function fillCustomerData() {
@@ -76,7 +79,14 @@
                 }
 
                 const result = await res.json();
-                alert("Transaksi berhasil disimpan!");
+                  Swal.fire({
+                    title: 'Berhasil!',
+                    text: 'Transaksi Berhasil ditambahkan!!',
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false
+                })
+                // alert("Transaksi berhasil disimpan!");
 
                 loadDataTransactions();
 
@@ -745,3 +755,4 @@
             updateStats();
         }
     </script>
+
