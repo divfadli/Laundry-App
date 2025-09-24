@@ -82,6 +82,8 @@ class TransOrderController extends Controller
             'services.*.id_service' => 'required|exists:type_of_services,id',
             'services.*.qty' => 'required|numeric|min:0.1',
             'services.*.notes' => 'nullable|string',
+            'ppn' => 'required|numeric',
+            'total' => 'required|numeric'
         ]);
 
         try {
@@ -89,18 +91,14 @@ class TransOrderController extends Controller
                 $serviceIds = collect($validated['services'])->pluck('id_service');
                 $services = TypeOfServices::whereIn('id', $serviceIds)->get()->keyBy('id');
 
-
-                $total = collect($validated['services'])->reduce(function ($carry, $item) use ($services) {
-                    return $carry + ($services[$item['id_service']]->price * $item['qty']);
-                }, 0);
-
                 $order = TransOrders::create([
                     'id_customer' => $validated['id_customer'],
                     'order_code' => $validated['order_code'],
                     'order_date' => $validated['order_date'],
                     'order_end_date' => $validated['order_end_date'],
                     'order_status' => 0,
-                    'total' => $total,
+                    'ppn' => $validated['ppn'],
+                    'total' => $validated['total'],
                     'order_pay' => 0,
                     'order_change' => 0,
                 ]);
@@ -183,7 +181,9 @@ class TransOrderController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id) {}
+    public function update(Request $request, string $id)
+    {
+    }
 
     /**
      * Selesaikan Order (hanya jika pembayaran cukup)
@@ -241,6 +241,7 @@ class TransOrderController extends Controller
             'customer.id' => 'required|exists:customers,id',
             'items' => 'required|array|min:1',
             'total' => 'required|numeric',
+            'ppn' => 'required|numeric',
             'order_date' => 'required|date',
             'order_status' => 'required|bool'
         ]);
@@ -254,6 +255,7 @@ class TransOrderController extends Controller
                 'order_date' => Carbon::parse($request->order_date)->format('Y-m-d H:i:s'),
                 'order_end_date' => Carbon::now()->addDays(3)->toDateString(),
                 'order_status' => $request->order_status,
+                'ppn' => $request->ppn,
                 'total' => $request->total
             ]);
 

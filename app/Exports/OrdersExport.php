@@ -41,6 +41,7 @@ class OrdersExport implements FromCollection, WithHeadings, WithMapping, WithEve
             'Tanggal Order',
             'Estimasi Selesai',
             'Tanggal Pengambilan',
+            'PPN 11% (Rp)',
             'Total (Rp)',
             'Status Order'
         ];
@@ -56,6 +57,7 @@ class OrdersExport implements FromCollection, WithHeadings, WithMapping, WithEve
             $order->order_date?->format('d/m/Y') ?? '-',
             $order->order_end_date?->format('d/m/Y') ?? '-',
             $order->transLaundryPickups?->pickup_date?->format('d/m/Y') ?? '-',
+            $order->ppn,
             $order->total,
             $order->status_text
         ];
@@ -71,11 +73,11 @@ class OrdersExport implements FromCollection, WithHeadings, WithMapping, WithEve
                 $totalCompleted = $this->orders->filter(fn($o) => $o->order_status == 1)->sum('total');
 
                 $totalRow = $lastRow + 2;
-                $sheet->setCellValue("F{$totalRow}", "Total Pendapatan (Rp)");
-                $sheet->setCellValue("G{$totalRow}", $totalCompleted);
+                $sheet->setCellValue("G{$totalRow}", "Total Pendapatan (Rp)");
+                $sheet->setCellValue("H{$totalRow}", $totalCompleted);
 
                 // Styling header
-                $sheet->getStyle('A1:H1')->applyFromArray([
+                $sheet->getStyle('A1:I1')->applyFromArray([
                     'font' => ['bold' => true],
                     'alignment' => ['horizontal' => 'center'],
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D9E1F2']],
@@ -83,7 +85,7 @@ class OrdersExport implements FromCollection, WithHeadings, WithMapping, WithEve
                 ]);
 
                 // Style total (bold, right align, border atas saja)
-                $sheet->getStyle("F{$totalRow}:G{$totalRow}")->applyFromArray([
+                $sheet->getStyle("G{$totalRow}:H{$totalRow}")->applyFromArray([
                     'font' => ['bold' => true],
                     'alignment' => ['horizontal' => 'right'],
                     'borders' => ['top' => ['borderStyle' => Border::BORDER_THIN]]
@@ -93,8 +95,8 @@ class OrdersExport implements FromCollection, WithHeadings, WithMapping, WithEve
                 $sheet->getStyle("D2:F{$lastRow}")->getAlignment()->setHorizontal('center');
 
                 // Border & auto width data rows
-                $sheet->getStyle("A1:H{$lastRow}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-                foreach (range('A', 'H') as $col) {
+                $sheet->getStyle("A1:I{$lastRow}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                foreach (range('A', 'I') as $col) {
                     $sheet->getColumnDimension($col)->setAutoSize(true);
                 }
 
@@ -102,11 +104,11 @@ class OrdersExport implements FromCollection, WithHeadings, WithMapping, WithEve
                 foreach ($this->orders as $i => $order) {
                     $row = $i + 2;
                     if ($order->order_status == 1) {
-                        $sheet->getStyle("A{$row}:H{$row}")
+                        $sheet->getStyle("A{$row}:I{$row}")
                             ->getFill()->setFillType(Fill::FILL_SOLID)
                             ->getStartColor()->setRGB('C6EFCE');
                     } elseif ($order->order_status == 0) {
-                        $sheet->getStyle("A{$row}:H{$row}")
+                        $sheet->getStyle("A{$row}:I{$row}")
                             ->getFill()->setFillType(Fill::FILL_SOLID)
                             ->getStartColor()->setRGB('FFC7CE');
                     }

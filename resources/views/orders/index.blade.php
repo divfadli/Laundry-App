@@ -25,6 +25,7 @@
                             <th>Kode Transaksi</th>
                             <th>Nama Customer</th>
                             <th>Tanggal</th>
+                            <th>PPN (11%)</th>
                             <th>Total Bayar</th>
                             <th>Status</th>
                             <th class="text-center">Aksi</th>
@@ -41,6 +42,7 @@
                                 </td>
                                 <td>{{ $order->customer->customer_name ?? 'Customer Dihapus' }}</td>
                                 <td>{{ $order->order_date->format('d/m/Y') }}</td>
+                                <td class="text-success fw-semibold">Rp {{ number_format($order->ppn, 0, ',', '.') }}</td>
                                 <td class="text-success fw-semibold">Rp {{ number_format($order->total, 0, ',', '.') }}</td>
                                 <td>
                                     <span class="badge rounded-pill {{ $order->status_class }} py-2 px-3">
@@ -91,4 +93,3 @@
         });
     </script>
 @endpush
-

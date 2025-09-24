@@ -139,7 +139,22 @@
 
                     <div class="total-section">
                         <h3>Total Pembayaran</h3>
-                        <div class="total-amount" id="totalAmount">Rp 0</div>
+
+                        <div class="payment-summary">
+                            <div class="row">
+                                <span>Subtotal</span>
+                                <span id="subtotalAmount">Rp 0</span>
+                            </div>
+                            <div class="row">
+                                <span>Pajak (11%)</span>
+                                <span id="ppnAmount">Rp 0</span>
+                            </div>
+                            <div class="row total">
+                                <strong>Total</strong>
+                                <strong id="totalAmount">Rp 0</strong>
+                            </div>
+                        </div>
+
                         <button class="btn btn-success" onclick="processTransaction()"
                             style="width: 100%; margin-top: 15px;">
                             💳 Proses Transaksi

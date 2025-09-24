@@ -273,6 +273,24 @@
          font-weight: 700;
      }
 
+     .payment-summary {
+         margin: 15px 0;
+         font-size: 1.1em;
+     }
+
+     .payment-summary .row {
+         display: flex;
+         justify-content: space-between;
+         margin: 4px 0;
+     }
+
+     .payment-summary .row.total {
+         border-top: 2px solid rgba(255, 255, 255, 0.6);
+         padding-top: 8px;
+         font-size: 1.3em;
+     }
+
+
      .status-badge {
          padding: 6px 12px;
          border-radius: 20px;

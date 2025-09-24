@@ -122,13 +122,33 @@
 
                     {{-- Box Ringkasan --}}
                     <div class="p-4 w-100 w-md-50 ms-auto border rounded-3 shadow-sm bg-white">
+                        {{-- Subtotal --}}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-semibold">Subtotal</span>
+                            <span class="text-dark fw-semibold">
+                                Rp. {{ number_format($order->total - $order->ppn, 0, ',', '.') }}
+                            </span>
+                        </div>
+
+                        {{-- PPN --}}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-semibold">PPN (11%)</span>
+                            <span class="text-muted fw-semibold">
+                                Rp. {{ number_format($order->ppn ?? 0, 0, ',', '.') }}
+                            </span>
+                        </div>
+
+                        {{-- Garis pemisah --}}
+                        <hr class="my-2">
+
                         {{-- Total --}}
-                        <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
-                            <span class="fw-bold fs-5">Total</span>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="fw-bold fs-5">Total Bayar</span>
                             <span class="fw-bold text-primary fs-4">
                                 Rp. {{ number_format($order->total, 0, ',', '.') }}
                             </span>
                         </div>
+
 
                         {{-- Jika Belum Lunas --}}
                         @if ($order->order_status == 0)

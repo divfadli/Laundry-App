@@ -105,12 +105,25 @@
                 <div class="d-flex justify-content-end mb-4">
                     <div class="w-25">
                         <hr>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <h6 class="mb-0">Subtotal:</h6>
+                            <h6 class="mb-0 text-dark" id="subTotal">Rp 0</h6>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <h6 class="mb-0">PPN (11%):</h6>
+                            <h6 class="mb-0 text-dark" id="taxTotal">Rp 0</h6>
+                        </div>
                         <div class="d-flex justify-content-between align-items-center mt-3">
-                            <h5 class="mb-0">Total:</h5>
+                            <h5 class="mb-0">Total Bayar:</h5>
                             <h4 class="mb-0 text-primary" id="grandTotal">Rp 0</h4>
                         </div>
                     </div>
                 </div>
+
+                {{-- Hidden inputs supaya dikirim ke server --}}
+                <input type="hidden" name="subtotal" id="inputSubtotal">
+                <input type="hidden" name="ppn" id="inputPpn">
+                <input type="hidden" name="total" id="inputTotal">
 
                 <div class="d-flex justify-content-between mt-4">
                     <a href="{{ route('orders.index') }}" class="btn btn-secondary">Kembali</a>

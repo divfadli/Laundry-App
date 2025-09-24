@@ -179,9 +179,24 @@
         <div class="divider"></div>
 
         <!-- Total -->
+        @php
+            $subtotal = $order->total - $order->ppn;
+            $ppn = $order->ppn;
+            $grandTotal = $order->total;
+        @endphp
+
+        <div class="flex-row">
+            <span>Subtotal</span>
+            <span>Rp.{{ number_format($subtotal, 0, ',', '.') }}</span>
+        </div>
+        <div class="flex-row">
+            <span>PPN (11%)</span>
+            <span>Rp.{{ number_format($ppn, 0, ',', '.') }}</span>
+        </div>
+        <div class="divider"></div>
         <div class="flex-row font-bold">
-            <span>&#x1F4B0; Total Tagihan</span>
-            <span>Rp.{{ number_format($order->total ?? 0, 0, ',', '.') }}</span>
+            <span>&#x1F4B0; Total Bayar</span>
+            <span>Rp.{{ number_format($grandTotal, 0, ',', '.') }}</span>
         </div>
 
         <div class="divider-double"></div>

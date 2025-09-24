@@ -16,15 +16,27 @@ function calculateSubtotal(row) {
 }
 
 function calculateGrandTotal() {
-    let total = 0;
+    let subtotal = 0;
     document.querySelectorAll('.service-item').forEach(row => {
         const serviceSelect = row.querySelector('.service-select');
         const qtyInput = row.querySelector('.qty-input');
         const price = parseFloat(serviceSelect.selectedOptions[0]?.dataset.price || 0);
         const qty = parseFloat(qtyInput.value) || 0;
-        total += price * qty;
+        subtotal += price * qty;
     });
-    document.getElementById('grandTotal').textContent = 'Rp ' + total.toLocaleString('id-ID');
+
+    const tax = subtotal * 0.11;
+    const grandTotal = subtotal + tax;
+
+    // Update tampilan
+    document.getElementById('subTotal').textContent = 'Rp ' + subtotal.toLocaleString('id-ID');
+    document.getElementById('taxTotal').textContent = 'Rp ' + tax.toLocaleString('id-ID');
+    document.getElementById('grandTotal').textContent = 'Rp ' + grandTotal.toLocaleString('id-ID');
+
+    // Isi hidden input untuk dikirim ke backend
+    document.getElementById('inputSubtotal').value = subtotal;
+    document.getElementById('inputPpn').value = tax;
+    document.getElementById('inputTotal').value = grandTotal;
 }
 
 document.addEventListener('DOMContentLoaded', () => {

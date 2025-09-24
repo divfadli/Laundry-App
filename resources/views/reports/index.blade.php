@@ -147,6 +147,7 @@
                             <th>Estimasi Selesai</th>
                             <th>Tanggal Pengambilan</th>
                             <th>Layanan</th>
+                            <th>PPN (11%)</th>
                             <th>Total</th>
                             <th>Status</th>
                         </tr>
@@ -169,6 +170,7 @@
                                         </small>
                                     @endforeach
                                 </td>
+                                <td>Rp {{ number_format($order->ppn, 0, ',', '.') }}</td>
                                 <td>Rp {{ number_format($order->total, 0, ',', '.') }}</td>
                                 <td>
                                     <span class="badge badge-status {{ $order->status_class }}">

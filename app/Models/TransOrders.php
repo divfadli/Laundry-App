@@ -16,6 +16,7 @@ class TransOrders extends Model
         'order_date',
         'order_end_date',
         'order_status',
+        'ppn',
         'total',
         'order_pay',
         'order_change'

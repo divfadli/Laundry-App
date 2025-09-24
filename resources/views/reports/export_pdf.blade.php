@@ -80,6 +80,7 @@
                 <th>Tanggal Order</th>
                 <th>Estimasi Selesai</th>
                 <th>Tanggal Pengambilan</th>
+                <th>PPN 11% (Rp)</th>
                 <th>Total (Rp)</th>
                 <th>Status Order</th>
             </tr>
@@ -99,6 +100,7 @@
                     <td class="center">{{ $order->order_end_date->format('d/m/Y') }}</td>
                     <td class="center">{{ optional($order->transLaundryPickups)->pickup_date?->format('d/m/Y') ?? '-' }}
                     </td>
+                    <td class="right">Rp {{ number_format($order->ppn, 0, ',', '.') }}</td>
                     <td class="right">Rp {{ number_format($order->total, 0, ',', '.') }}</td>
                     <td class="{{ $order->order_status == 1 ? 'status-completed' : 'status-pending' }}">
                         {{ $order->status_text }}
@@ -108,7 +110,7 @@
         </tbody>
         <tfoot>
             <tr>
-                <td colspan="6" class="right">Total Pendapatan (Selesai):</td>
+                <td colspan="7" class="right">Total Pendapatan (Selesai):</td>
                 <td class="right" colspan="2">Rp {{ number_format($grandTotal, 0, ',', '.') }}</td>
             </tr>
         </tfoot>

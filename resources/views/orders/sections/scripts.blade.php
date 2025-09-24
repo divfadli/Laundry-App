@@ -1,245 +1,273 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   @include('sweetalert::alert')
 
-    <script>
-        // Isi Data Customer
-        function fillCustomerData() {
-            let select = document.getElementById("customerId");
-            let option = select.options[select.selectedIndex];
+  <script>
+      let ppn = 0;
+      // Isi Data Customer
+      function fillCustomerData() {
+          let select = document.getElementById("customerId");
+          let option = select.options[select.selectedIndex];
 
-            document.getElementById("customerPhone").value = option.getAttribute("data-phone") || "";
-            document.getElementById("customerAddress").value = option.getAttribute("data-address") || "";
-        }
+          document.getElementById("customerPhone").value = option.getAttribute("data-phone") || "";
+          document.getElementById("customerAddress").value = option.getAttribute("data-address") || "";
+      }
 
-        // let services = {
-        //     !!$services!!
-        // };
-        let services = @json($services);
+      // let services = {
+      //     !!$services!!
+      // };
+      let services = @json($services);
 
-        let cart = [];
-        let transactions = [];
-        let transactionCounter = 0;
+      let cart = [];
+      let transactions = [];
+      let transactionCounter = 0;
 
-        function addService(serviceId, price) {
-            document.getElementById('serviceType').value = serviceId;
-            document.getElementById('serviceWeight').focus();
-        }
+      function addService(serviceId, price) {
+          document.getElementById('serviceType').value = serviceId;
+          document.getElementById('serviceWeight').focus();
+      }
 
-        function removeFromCart(itemId) {
-            // cart.splice(index, 1)
-            cart = cart.filter(item => item.id !== itemId);
-            updateCartDisplay();
-        }
+      function removeFromCart(itemId) {
+          // cart.splice(index, 1)
+          cart = cart.filter(item => item.id !== itemId);
+          updateCartDisplay();
+      }
 
-        function clearCart() {
-            cart = [];
-            updateCartDisplay();
-            document.getElementById('transactionForm').reset();
-        }
+      function clearCart() {
+          cart = [];
+          updateCartDisplay();
+          document.getElementById('transactionForm').reset();
+      }
 
-        async function processTransaction() {
-            const customerId = document.getElementById('customerId').value;
-            const customerPhone = document.getElementById('customerPhone').value;
-            const customerAddress = document.getElementById('customerAddress').value;
+      async function processTransaction() {
+          const customerId = document.getElementById('customerId').value;
+          const customerPhone = document.getElementById('customerPhone').value;
+          const customerAddress = document.getElementById('customerAddress').value;
 
-            if (!customerId || !customerPhone || cart.length === 0) {
-                alert('Mohon lengkapi data pelanggan dan pastikan ada item di keranjang!');
-                return;
-            }
+          if (!customerId || !customerPhone || cart.length === 0) {
+              alert('Mohon lengkapi data pelanggan dan pastikan ada item di keranjang!');
+              return;
+          }
 
-            const total = cart.reduce((sum, item) => sum + item.subtotal, 0);
+          // Hitung subtotal & pajak
+          const subtotal = cart.reduce((sum, item) => sum + item.subtotal, 0);
+          const ppn = subtotal * 0.11;
+          const total = subtotal + ppn;
 
-            const transaction = {
-                id: `LDY-${formatDateYMD()}-${transactionCounter.toString().padStart(4, '0')}`,
-                customer: {
-                    id: customerId,
-                    phone: customerPhone,
-                    address: customerAddress
-                },
-                items: [...cart],
-                total: total,
-                order_date: new Date().toISOString(),
-                order_status: 0
-            };
+          const transaction = {
+              id: `LDY-${formatDateYMD()}-${transactionCounter.toString().padStart(4, '0')}`,
+              customer: {
+                  id: customerId,
+                  phone: customerPhone,
+                  address: customerAddress
+              },
+              items: [...cart],
+              subtotal: subtotal,
+              ppn: ppn,
+              total: total,
+              order_date: new Date().toISOString(),
+              order_status: 0
+          };
 
-            try {
-                const res = await fetch("{{ route('orders.laundry_post') }}", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Accept": "application/json",
-                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute(
-                            "content")
-                    },
-                    body: JSON.stringify(transaction)
-                })
+          try {
+              const res = await fetch("{{ route('orders.laundry_post') }}", {
+                  method: "POST",
+                  headers: {
+                      "Content-Type": "application/json",
+                      "Accept": "application/json",
+                      "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute(
+                          "content")
+                  },
+                  body: JSON.stringify(transaction)
+              });
 
-                if (!res.ok) {
-                    throw new Error(`HTTP error!! Status: ${res.status}`)
-                }
+              if (!res.ok) throw new Error(`HTTP error!! Status: ${res.status}`);
 
-                const result = await res.json();
-                Swal.fire({
-                    title: 'Berhasil!',
-                    text: 'Transaksi Berhasil ditambahkan!!',
-                    icon: 'success',
-                    timer: 2000,
-                    showConfirmButton: false
-                })
-                // alert("Transaksi berhasil disimpan!");
+              const result = await res.json();
+              Swal.fire({
+                  title: 'Berhasil!',
+                  text: 'Transaksi Berhasil ditambahkan!!',
+                  icon: 'success',
+                  timer: 2000,
+                  showConfirmButton: false
+              });
 
-                loadDataTransactions();
+              loadDataTransactions();
+              clearCart();
+              showReceipt(result.data);
 
-                // Reset Cart
-                clearCart();
-                showReceipt(result.data);
+          } catch (error) {
+              console.error("Gagal Menyimpan Data Transaksi: ", error);
+          }
+      }
 
-            } catch (error) {
-                console.error("Gagal Menyimpan Data Transaksi: ", error)
-            }
-        }
+      function showReceipt(transaction) {
+          const subtotal = (transaction.total ?? 0) - (transaction.ppn ?? 0);
 
-        function showReceipt(transaction) {
-            const receiptHtml = `
-                <div class="receipt">
-                    <div class="receipt-header">
-                        <h2>🧺 LAUNDRY RECEIPT</h2>
-                        <p>ID: ${transaction.order_code}</p>
-                        <p>Tanggal: ${new Date(transaction.order_date).toLocaleString('id-ID')}</p>
-                    </div>
-                    
-                    <div style="margin-bottom: 20px;">
-                        <strong>Pelanggan:</strong><br>
-                        ${transaction.customer.customer_name}<br>
-                        ${formatPhoneNumberDynamic(transaction.customer.phone)}<br>
-                        ${transaction.customer.address}
-                    </div>
-                    
-                    <div style="margin-bottom: 20px;">
-                        <strong>Detail Pesanan:</strong><br>
-                        ${transaction.trans_order_details.map(item => `
-                                                                            <div class="receipt-item">
-                                                                                <span>${item.type_of_service.service_name} (${item.qty}kg)</span>
-                                                                                <span>Rp ${parseFloat(item.subtotal ?? 0).toLocaleString('id-ID')}</span>
-                                                                            </div>
-                                                                        `).join('')}
-                    </div>
-                    
-                    <div class="receipt-total">
-                        <div class="receipt-item">
-                            <span>TOTAL:</span>
-                            <span>Rp ${parseFloat(transaction.total ?? 0).toLocaleString('id-ID')}</span>
-                        </div>
-                    </div>
-                    
-                    <div style="text-align: center; margin-top: 20px;">
-                        <p>Terima kasih atas kepercayaan Anda!</p>
-                        <p>Barang akan siap dalam 1-3 hari kerja</p>
-                    </div>
+          const receiptHtml = `
+        <div class="receipt">
+            <div class="receipt-header">
+                <h2>🧺 LAUNDRY RECEIPT</h2>
+                <p>ID: ${transaction.order_code}</p>
+                <p>Tanggal: ${new Date(transaction.order_date).toLocaleDateString('id-ID')}</p>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <strong>Pelanggan:</strong><br>
+                ${transaction.customer.customer_name}<br>
+                ${formatPhoneNumberDynamic(transaction.customer.phone)}<br>
+                ${transaction.customer.address}
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <strong>Detail Pesanan:</strong><br>
+                ${transaction.trans_order_details.map(item => `
+                                <div class="receipt-item">
+                                    <span>${item.type_of_service.service_name} (${item.qty}kg)</span>
+                                    <span>Rp ${parseFloat(item.subtotal ?? 0).toLocaleString('id-ID')}</span>
+                                </div>
+                            `).join('')}
+            </div>
+            
+            <div class="receipt-total">
+                <div class="receipt-item">
+                    <span>Subtotal:</span>
+                    <span>Rp ${subtotal.toLocaleString('id-ID')}</span>
                 </div>
-                
-                <div style="text-align: center; margin-top: 20px;">
-                    <button class="btn btn-primary" onclick="printReceipt()">🖨️ Cetak Struk</button>
-                    <button class="btn btn-success" onclick="closeModal()">✅ Selesai</button>
+                <div class="receipt-item">
+                    <span>Pajak (11%):</span>
+                    <span>Rp ${parseFloat(transaction.ppn ?? 0).toLocaleString('id-ID')}</span>
                 </div>
-            `;
+                <div class="receipt-item" style="font-size: 14px; border-top:1px dashed #000; margin-top:5px; padding-top:5px;">
+                    <strong>Total:</strong>
+                    <strong>Rp ${parseFloat(transaction.total ?? 0).toLocaleString('id-ID')}</strong>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <p>Terima kasih atas kepercayaan Anda!</p>
+                <p>Barang akan siap dalam 1-3 hari kerja</p>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 20px;">
+            <button class="btn btn-primary" onclick="printReceipt()">🖨️ Cetak Struk</button>
+            <button class="btn btn-success" onclick="closeModal()">✅ Selesai</button>
+        </div>
+    `;
 
-            document.getElementById('modalContent').innerHTML = receiptHtml;
-            document.getElementById('transactionModal').style.display = 'block';
-        }
+          document.getElementById('modalContent').innerHTML = receiptHtml;
+          document.getElementById('transactionModal').style.display = 'block';
+      }
 
-        function printReceipt() {
-            const receiptContent = document.querySelector('.receipt').outerHTML;
+      function printReceipt() {
+          const receiptContent = document.querySelector('.receipt').outerHTML;
 
-            const printWindow = window.open('', '', 'width=400,height=600');
-            printWindow.document.write(`
-                <html>
-                    <head>
-                        <title>Cetak Struk</title>
-                        <style>
-                            @page { size: 80mm auto; margin: 0; }
-                            body {
-                                font-family: 'Courier New', monospace;
-                                font-size: 13px;
-                                color: #000;
-                                margin: 0;
-                                padding: 10px;
-                            }
+          const printWindow = window.open('', '', 'width=400,height=600');
+          printWindow.document.write(`
+        <html>
+            <head>
+                <title>Cetak Struk</title>
+                <style>
+                    @page { size: 80mm auto; margin: 0; }
+                    body {
+                        font-family: 'Courier New', monospace;
+                        font-size: 12px;
+                        color: #000;
+                        margin: 0;
+                        padding: 8px;
+                    }
 
-                            .receipt {
-                                width: 100%;
-                                max-width: 80mm;
-                                margin: 0 auto;
-                            }
+                    .receipt {
+                        width: 100%;
+                        max-width: 80mm;
+                        margin: 0 auto;
+                    }
 
-                            .receipt-header {
-                                text-align: center;
-                                border-bottom: 1px dashed #000;
-                                padding-bottom: 8px;
-                                margin-bottom: 8px;
-                            }
-                            .receipt-header h2 {
-                                margin: 0;
-                                font-size: 16px;
-                                font-weight: bold;
-                            }
-                            .receipt-header p {
-                                margin: 2px 0;
-                            }
+                    .receipt-header {
+                        text-align: center;
+                        border-bottom: 1px dashed #000;
+                        padding-bottom: 6px;
+                        margin-bottom: 6px;
+                    }
+                    .receipt-header h2 {
+                        margin: 0;
+                        font-size: 15px;
+                        font-weight: bold;
+                    }
+                    .receipt-header p {
+                        margin: 2px 0;
+                    }
 
-                            .section-title {
-                                font-weight: bold;
-                                margin: 8px 0 4px;
-                                text-decoration: underline;
-                            }
+                    .section {
+                        margin: 6px 0;
+                    }
+                    .section strong {
+                        display: block;
+                        margin-bottom: 2px;
+                    }
 
-                            .receipt-item {
-                                display: flex;
-                                justify-content: space-between;
-                                margin: 2px 0;
-                            }
+                    .receipt-item {
+                        display: flex;
+                        justify-content: space-between;
+                        margin: 2px 0;
+                    }
+                    .receipt-item span:first-child {
+                        text-align: left;
+                        flex: 1;
+                    }
+                    .receipt-item span:last-child {
+                        text-align: right;
+                        flex: 0 0 60px;
+                    }
 
-                            .receipt-total {
-                                border-top: 1px dashed #000;
-                                margin-top: 8px;
-                                padding-top: 8px;
-                                font-weight: bold;
-                                display: flex;
-                                justify-content: space-between;
-                            }
+                    .receipt-total {
+                        border-top: 1px dashed #000;
+                        margin-top: 6px;
+                        padding-top: 6px;
+                    }
+                    .receipt-total .receipt-item {
+                        font-weight: bold;
+                    }
+                    .receipt-total .grand-total {
+                        border-top: 1px dashed #000;
+                        margin-top: 4px;
+                        padding-top: 4px;
+                        font-size: 13px;
+                    }
 
-                            .footer {
-                                text-align: center;
-                                margin-top: 12px;
-                                font-size: 12px;
-                            }
-                            .footer p {
-                                margin: 2px 0;
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        ${receiptContent}
-                    </body>
-                </html>
-                `);
+                    .footer {
+                        text-align: center;
+                        margin-top: 10px;
+                        font-size: 11px;
+                    }
+                    .footer p {
+                        margin: 2px 0;
+                    }
+                </style>
+            </head>
+            <body>
+                ${receiptContent}
+            </body>
+        </html>
+    `);
 
-            printWindow.document.close();
-            printWindow.focus();
+          printWindow.document.close();
+          printWindow.focus();
 
-            printWindow.onafterprint = function() {
-                printWindow.close();
-                document.getElementById('transactionModal').style.display = 'block';
-            };
+          printWindow.onafterprint = function() {
+              printWindow.close();
+              document.getElementById('transactionModal').style.display = 'block';
+          };
 
-            printWindow.print();
-        }
+          printWindow.print();
+      }
 
-        function updateTransactionHistory() {
-            const historyContainer = document.getElementById('transactionHistory');
-            const recentTransactions = transactions.slice(-5).reverse();
 
-            const html = recentTransactions.map(transaction => `
+      function updateTransactionHistory() {
+          const historyContainer = document.getElementById('transactionHistory');
+          const recentTransactions = transactions.slice(-5).reverse();
+
+          const html = recentTransactions.map(transaction => `
                 <div class="transaction-item">
                     <h4>${transaction.id} - ${transaction.customer.name}</h4>
                     <p>📞 ${formatPhoneNumberDynamic(transaction.customer.phone)}</p>
@@ -250,86 +278,86 @@
                 </div>
             `).join('');
 
-            historyContainer.innerHTML = html || '<p>Belum ada transaksi</p>';
-        }
+          historyContainer.innerHTML = html || '<p>Belum ada transaksi</p>';
+      }
 
-        function getStatusText(status) {
-            const statusMap = {
-                'baru': 'Process',
-                'completed': 'Completed'
-            };
-            return statusMap[status] || status;
-        }
+      function getStatusText(status) {
+          const statusMap = {
+              'baru': 'Process',
+              'completed': 'Completed'
+          };
+          return statusMap[status] || status;
+      }
 
-        function updateStats() {
-            const totalTransactions = transactions.length;
-            const totalRevenue = transactions.reduce((sum, t) => sum + parseFloat(t.total), 0);
-            const activeOrders = transactions.filter(t => t.status !== 'completed').length;
-            const completedOrders = transactions.filter(t => t.status === 'completed').length;
+      function updateStats() {
+          const totalTransactions = transactions.length;
+          const totalRevenue = transactions.reduce((sum, t) => sum + parseFloat(t.total), 0);
+          const activeOrders = transactions.filter(t => t.status !== 'completed').length;
+          const completedOrders = transactions.filter(t => t.status === 'completed').length;
 
-            document.getElementById('totalTransactions').textContent = totalTransactions;
-            document.getElementById('totalRevenue').textContent = `Rp. ${totalRevenue.toLocaleString('id-ID')}`;
-            document.getElementById('activeOrders').textContent = activeOrders;
-            document.getElementById('completedOrders').textContent = completedOrders;
-        }
+          document.getElementById('totalTransactions').textContent = totalTransactions;
+          document.getElementById('totalRevenue').textContent = `Rp. ${totalRevenue.toLocaleString('id-ID')}`;
+          document.getElementById('activeOrders').textContent = activeOrders;
+          document.getElementById('completedOrders').textContent = completedOrders;
+      }
 
-        function showAllTransactions() {
-            const allTransactionsHtml = `
+      function showAllTransactions() {
+          const allTransactionsHtml = `
         <h2>📋 Semua Transaksi</h2>
         <div style="max-height: 400px; overflow-y: auto;">
             ${transactions.reverse().map(transaction => `
-                        <div class="transaction-item">
-                            <h4>${transaction.id} - ${transaction.customer.name}</h4>
-                            <p>📞 ${formatPhoneNumberDynamic(transaction.customer.phone)}</p>
-                            <p>🛍️ ${transaction.items.map(item => 
-                                `${item.service} - ${item.weight}${item.service.includes('Sepatu') ? 'pasang' : item.service.includes('Karpet') ? 'm²' : 'kg'}`
-                            ).join(', ')}</p>
-                            <p>💰 Rp. ${parseFloat(transaction.total ?? 0).toLocaleString('id-ID')}</p>
-                            <p>📅 ${new Date(transaction.date).toLocaleString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-                            <span class="status-badge status-${transaction.status}">${getStatusText(transaction.status)}</span>
-                            <button 
-                                class="btn btn-primary" 
-                                onclick="updateTransactionStatus('${transaction.id}')" 
-                                style="margin-top: 10px; padding: 5px 15px; font-size: 12px;"
-                                ${transaction.status === 'completed' ? 'disabled style="background:gray; cursor:not-allowed;"' : ''}>
-                                📝 Update Status
-                            </button>
-                        </div>
-                    `).join('')}
+                                                  <div class="transaction-item">
+                                                      <h4>${transaction.id} - ${transaction.customer.name}</h4>
+                                                      <p>📞 ${formatPhoneNumberDynamic(transaction.customer.phone)}</p>
+                                                      <p>🛍️ ${transaction.items.map(item => 
+                                                          `${item.service} - ${item.weight}${item.service.includes('Sepatu') ? 'pasang' : item.service.includes('Karpet') ? 'm²' : 'kg'}`
+                                                      ).join(', ')}</p>
+                                                      <p>💰 Rp. ${parseFloat(transaction.total ?? 0).toLocaleString('id-ID')}</p>
+                                                      <p>📅 ${new Date(transaction.date).toLocaleString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                                                      <span class="status-badge status-${transaction.status}">${getStatusText(transaction.status)}</span>
+                                                      <button 
+                                                          class="btn btn-primary" 
+                                                          onclick="updateTransactionStatus('${transaction.id}')" 
+                                                          style="margin-top: 10px; padding: 5px 15px; font-size: 12px;"
+                                                          ${transaction.status === 'completed' ? 'disabled style="background:gray; cursor:not-allowed;"' : ''}>
+                                                          📝 Update Status
+                                                      </button>
+                                                  </div>
+                                              `).join('')}
         </div>
     `;
 
-            document.getElementById('modalContent').innerHTML = allTransactionsHtml;
-            document.getElementById('transactionModal').style.display = 'block';
-        }
+          document.getElementById('modalContent').innerHTML = allTransactionsHtml;
+          document.getElementById('transactionModal').style.display = 'block';
+      }
 
-        function showReports() {
-            const today = new Date();
-            const thisMonth = today.getMonth();
-            const thisYear = today.getFullYear();
+      function showReports() {
+          const today = new Date();
+          const thisMonth = today.getMonth();
+          const thisYear = today.getFullYear();
 
-            const monthlyTransactions = transactions.filter(t => {
-                const tDate = new Date(t.date);
-                return tDate.getMonth() === thisMonth && tDate.getFullYear() === thisYear;
-            });
+          const monthlyTransactions = transactions.filter(t => {
+              const tDate = new Date(t.date);
+              return tDate.getMonth() === thisMonth && tDate.getFullYear() === thisYear;
+          });
 
-            const monthlyRevenue = monthlyTransactions.reduce((sum, t) => sum + parseFloat(t.total), 0);
+          const monthlyRevenue = monthlyTransactions.reduce((sum, t) => sum + parseFloat(t.total), 0);
 
-            const serviceStats = {};
-            transactions.forEach(t => {
-                t.items.forEach(item => {
-                    if (!serviceStats[item.service]) {
-                        serviceStats[item.service] = {
-                            count: 0,
-                            revenue: 0
-                        };
-                    }
-                    serviceStats[item.service].count++;
-                    serviceStats[item.service].revenue += parseFloat(item.subtotal);
-                });
-            });
+          const serviceStats = {};
+          transactions.forEach(t => {
+              t.items.forEach(item => {
+                  if (!serviceStats[item.service]) {
+                      serviceStats[item.service] = {
+                          count: 0,
+                          revenue: 0
+                      };
+                  }
+                  serviceStats[item.service].count++;
+                  serviceStats[item.service].revenue += parseFloat(item.subtotal);
+              });
+          });
 
-            const reportsHtml = `
+          const reportsHtml = `
                 <h2>📈 Laporan Penjualan</h2>
                 
                 <div class="stats-grid" style="margin-bottom: 20px;">
@@ -358,22 +386,22 @@
                     </thead>
                     <tbody>
                         ${Object.entries(serviceStats).map(([service, stats]) => `
-                                                                                                                                                                <tr>
-                                                                                                                                                                    <td>${service}</td>
-                                                                                                                                                                    <td>${stats.count}</td>
-                                                                                                                                                                    <td>Rp. ${stats.revenue.toLocaleString('id-ID')}</td>
-                                                                                                                                                                </tr>
-                                                                                                                                                            `).join('')}
+                                                                                                                                                                                          <tr>
+                                                                                                                                                                                              <td>${service}</td>
+                                                                                                                                                                                              <td>${stats.count}</td>
+                                                                                                                                                                                              <td>Rp. ${stats.revenue.toLocaleString('id-ID')}</td>
+                                                                                                                                                                                          </tr>
+                                                                                                                                                                                      `).join('')}
                     </tbody>
                 </table>
             `;
 
-            document.getElementById('modalContent').innerHTML = reportsHtml;
-            document.getElementById('transactionModal').style.display = 'block';
-        }
+          document.getElementById('modalContent').innerHTML = reportsHtml;
+          document.getElementById('transactionModal').style.display = 'block';
+      }
 
-        function manageServices() {
-            const servicesHtml = `
+      function manageServices() {
+          const servicesHtml = `
                 <h2>⚙️ Kelola Layanan</h2>
                 <p>Fitur ini memungkinkan Anda mengelola jenis layanan dan harga.</p>
                 
@@ -433,25 +461,25 @@
                 </div>
             `;
 
-            document.getElementById('modalContent').innerHTML = servicesHtml;
-            document.getElementById('transactionModal').style.display = 'block';
-        }
+          document.getElementById('modalContent').innerHTML = servicesHtml;
+          document.getElementById('transactionModal').style.display = 'block';
+      }
 
-        function updateTransactionStatus(transactionId) {
-            const transaction = transactions.find(t => t.id === transactionId);
-            if (!transaction) return;
+      function updateTransactionStatus(transactionId) {
+          const transaction = transactions.find(t => t.id === transactionId);
+          if (!transaction) return;
 
-            const statusOptions = [{
-                    value: '0',
-                    text: 'Process'
-                },
-                {
-                    value: '1',
-                    text: 'Completed'
-                }
-            ];
+          const statusOptions = [{
+                  value: '0',
+                  text: 'Process'
+              },
+              {
+                  value: '1',
+                  text: 'Completed'
+              }
+          ];
 
-            const statusHtml = `
+          const statusHtml = `
         <div class="card">
             <h2>📝 Update Status Transaksi</h2>
             <h3 style="margin-bottom: 10px;">${transaction.id} - ${transaction.customer.name}</h3>
@@ -465,10 +493,10 @@
                 <label for="newStatus">Pilih Status Baru:</label>
                 <select id="newStatus" onchange="togglePaymentForm(${transaction.total})">
                     ${statusOptions.map(option => `
-                        <option value="${option.value}" ${transaction.order_status === option.value ? 'selected' : ''}>
-                            ${option.text}
-                        </option>
-                    `).join('')}
+                                                  <option value="${option.value}" ${transaction.order_status === option.value ? 'selected' : ''}>
+                                                      ${option.text}
+                                                  </option>
+                                              `).join('')}
                 </select>
             </div>
 
@@ -514,252 +542,257 @@
         </div>
     `;
 
-            document.getElementById('modalContent').innerHTML = statusHtml;
-            document.getElementById('transactionModal').style.display = 'block';
+          document.getElementById('modalContent').innerHTML = statusHtml;
+          document.getElementById('transactionModal').style.display = 'block';
 
-            // kalau status awalnya sudah Completed, tampilkan form langsung
-            if (transaction.order_status === '1') {
-                togglePaymentForm(transaction.total);
-            }
-        }
+          // kalau status awalnya sudah Completed, tampilkan form langsung
+          if (transaction.order_status === '1') {
+              togglePaymentForm(transaction.total);
+          }
+      }
 
-        function togglePaymentForm(total) {
-            const newStatus = document.getElementById('newStatus').value;
-            const paymentForm = document.getElementById('paymentForm');
-            const btnSave = document.getElementById('btnSave');
+      function togglePaymentForm(total) {
+          const newStatus = document.getElementById('newStatus').value;
+          const paymentForm = document.getElementById('paymentForm');
+          const btnSave = document.getElementById('btnSave');
 
-            if (newStatus === '1') {
-                paymentForm.style.display = 'block';
+          if (newStatus === '1') {
+              paymentForm.style.display = 'block';
 
-                const payInput = document.getElementById('order_pay');
-                const pay = payInput ? parseInt(payInput.value) || 0 : 0;
+              const payInput = document.getElementById('order_pay');
+              const pay = payInput ? parseInt(payInput.value) || 0 : 0;
 
-                if (pay >= total) {
-                    btnSave.disabled = false;
-                    calculateChange(total);
-                } else {
-                    btnSave.disabled = true;
-                }
-            } else {
-                paymentForm.style.display = 'none';
-                btnSave.disabled = false;
-            }
-        }
+              if (pay >= total) {
+                  btnSave.disabled = false;
+                  calculateChange(total);
+              } else {
+                  btnSave.disabled = true;
+              }
+          } else {
+              paymentForm.style.display = 'none';
+              btnSave.disabled = false;
+          }
+      }
 
-        function calculateChange(total) {
-            const pay = parseInt(document.getElementById('order_pay').value) || 0;
-            const change = pay - total;
-            const btnSave = document.getElementById('btnSave');
+      function calculateChange(total) {
+          const pay = parseInt(document.getElementById('order_pay').value) || 0;
+          const change = pay - total;
+          const btnSave = document.getElementById('btnSave');
 
-            document.getElementById('order_change').value = change >= 0 ? `Rp. ${change.toLocaleString('id-ID')}` : 'Rp. 0';
-            btnSave.disabled = pay < total;
-        }
+          document.getElementById('order_change').value = change >= 0 ? `Rp. ${change.toLocaleString('id-ID')}` : 'Rp. 0';
+          btnSave.disabled = pay < total;
+      }
 
-        async function saveStatusUpdate(transactionId, total) {
-            let url = `{{ route('orders.pickupLaundry', ':id') }}`.replace(':id', transactionId);
-            const newStatus = document.getElementById('newStatus').value;
+      async function saveStatusUpdate(transactionId, total) {
+          let url = `{{ route('orders.pickupLaundry', ':id') }}`.replace(':id', transactionId);
+          const newStatus = document.getElementById('newStatus').value;
 
-            let payload = {
-                order_status: newStatus
-            };
+          let payload = {
+              order_status: newStatus
+          };
 
-            if (newStatus === '1') {
-                const pay = parseInt(document.getElementById('order_pay').value) || 0;
-                const change = pay - total;
-                const notes = document.getElementById('pickup_notes').value || "";
+          if (newStatus === '1') {
+              const pay = parseInt(document.getElementById('order_pay').value) || 0;
+              const change = pay - total;
+              const notes = document.getElementById('pickup_notes').value || "";
 
-                payload.order_pay = pay;
-                payload.order_change = change >= 0 ? change : 0;
-                payload.notes = notes;
-            }
+              payload.order_pay = pay;
+              payload.order_change = change >= 0 ? change : 0;
+              payload.notes = notes;
+          }
 
-            try {
-                const res = await fetch(url, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute(
-                            "content")
-                    },
-                    body: JSON.stringify(payload)
-                });
+          try {
+              const res = await fetch(url, {
+                  method: 'PUT',
+                  headers: {
+                      'Content-Type': 'application/json',
+                      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute(
+                          "content")
+                  },
+                  body: JSON.stringify(payload)
+              });
 
-                if (!res.ok) {
-                    throw new Error(`HTTP error!! Status: ${res.status}`);
-                }
+              if (!res.ok) {
+                  throw new Error(`HTTP error!! Status: ${res.status}`);
+              }
 
-                const result = await res.json();
-                // alert("✅ Status Transaksi Berhasil diupdate!");
-                Swal.fire({
-                    title: 'Berhasil!',
-                    text: 'Status Transaksi Berhasil diupdate!!',
-                    icon: 'success',
-                    timer: 2000,
-                    showConfirmButton: false
-                })
-                loadDataTransactions();
-                closeModal();
-                // window.location.replace("{{ route('orders.index') }}");
-            } catch (error) {
-                console.error("❌ Gagal Menyimpan Data Transaksi: ", error);
-            }
-        }
+              const result = await res.json();
+              // alert("✅ Status Transaksi Berhasil diupdate!");
+              Swal.fire({
+                  title: 'Berhasil!',
+                  text: 'Status Transaksi Berhasil diupdate!!',
+                  icon: 'success',
+                  timer: 2000,
+                  showConfirmButton: false
+              })
+              loadDataTransactions();
+              closeModal();
+              // window.location.replace("{{ route('orders.index') }}");
+          } catch (error) {
+              console.error("❌ Gagal Menyimpan Data Transaksi: ", error);
+          }
+      }
 
-        function closeModal() {
-            document.getElementById('transactionModal').style.display = 'none';
-        }
+      function closeModal() {
+          document.getElementById('transactionModal').style.display = 'none';
+      }
 
-        function formatPhoneNumberDynamic(number) {
-            return number.match(/.{1,3}/g).join("-");
-        }
+      function formatPhoneNumberDynamic(number) {
+          return number.match(/.{1,3}/g).join("-");
+      }
 
-        function formatDateYMD(date = new Date()) {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
+      function formatDateYMD(date = new Date()) {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
 
-            return `${year}${month}${day}`;
-        }
+          return `${year}${month}${day}`;
+      }
 
-        function formatNumber(input) {
-            // Replace comma with dot for decimal separator
-            let value = input.value.replace(',', '.');
+      function formatNumber(input) {
+          // Replace comma with dot for decimal separator
+          let value = input.value.replace(',', '.');
 
-            // Ensure only valid decimal number
-            if (!/^\d*\.?\d*$/.test(value)) {
-                value = value.slice(0, -1);
-            }
+          // Ensure only valid decimal number
+          if (!/^\d*\.?\d*$/.test(value)) {
+              value = value.slice(0, -1);
+          }
 
-            // Update input value
-            input.value = value;
-        }
+          // Update input value
+          input.value = value;
+      }
 
-        function parseDecimal(value) {
-            // Handle both comma and dot as decimal separator
-            return parseFloat(value.toString().replace(',', '.')) || 0;
-        }
+      function parseDecimal(value) {
+          // Handle both comma and dot as decimal separator
+          return parseFloat(value.toString().replace(',', '.')) || 0;
+      }
 
-        // Initialize the application
-        document.addEventListener('DOMContentLoaded', function() {
-            loadDataTransactions();
+      // Initialize the application
+      document.addEventListener('DOMContentLoaded', function() {
+          loadDataTransactions();
 
-            // Add event listener for weight input to handle decimal with comma
-            const weightInput = document.getElementById('serviceWeight');
-            weightInput.addEventListener('input', function() {
-                formatNumber(this);
-            });
+          // Add event listener for weight input to handle decimal with comma
+          const weightInput = document.getElementById('serviceWeight');
+          weightInput.addEventListener('input', function() {
+              formatNumber(this);
+          });
 
-            // Close modal when clicking outside
-            window.onclick = function(event) {
-                const modal = document.getElementById('transactionModal');
-                if (event.target === modal) {
-                    closeModal();
-                }
-            };
-        });
+          // Close modal when clicking outside
+          window.onclick = function(event) {
+              const modal = document.getElementById('transactionModal');
+              if (event.target === modal) {
+                  closeModal();
+              }
+          };
+      });
 
-        // Update addToCart function to handle decimal with comma
-        function addToCart() {
-            const serviceType = document.getElementById('serviceType').value;
-            const weightValue = document.getElementById('serviceWeight').value;
-            const weight = parseDecimal(weightValue);
-            const notes = document.getElementById('notes').value;
+      // Update addToCart function to handle decimal with comma
+      function addToCart() {
+          const serviceType = document.getElementById('serviceType').value;
+          const weightValue = document.getElementById('serviceWeight').value;
+          const weight = parseDecimal(weightValue);
+          const notes = document.getElementById('notes').value;
 
-            if (!serviceType || !weightValue || weight <= 0) {
-                alert('Mohon lengkapi semua field yang diperlukan!');
-                return;
-            }
+          if (!serviceType || !weightValue || weight <= 0) {
+              alert('Mohon lengkapi semua field yang diperlukan!');
+              return;
+          }
 
-            const service = services.find(s => s.id == serviceType);
-            if (!service) {
-                alert('Layanan tidak ditemukan!');
-                return;
-            }
-            const price = parseFloat(service.price) || 0;
-            const subtotal = price * weight;
+          const service = services.find(s => s.id == serviceType);
+          if (!service) {
+              alert('Layanan tidak ditemukan!');
+              return;
+          }
+          const price = parseFloat(service.price) || 0;
+          const subtotal = price * weight;
 
-            const item = {
-                id: Date.now(),
-                id_service: service.id,
-                service: service.service_name,
-                weight: weight,
-                price: price,
-                subtotal: subtotal,
-                notes: notes || null
-            };
+          const item = {
+              id: Date.now(),
+              id_service: service.id,
+              service: service.service_name,
+              weight: weight,
+              price: price,
+              subtotal: subtotal,
+              notes: notes || null
+          };
 
-            cart.push(item);
-            updateCartDisplay();
+          cart.push(item);
+          updateCartDisplay();
 
-            // Clear form
-            document.getElementById('serviceType').value = '';
-            document.getElementById('serviceWeight').value = '';
-            document.getElementById('notes').value = '';
-        }
+          // Clear form
+          document.getElementById('serviceType').value = '';
+          document.getElementById('serviceWeight').value = '';
+          document.getElementById('notes').value = '';
+      }
 
-        // Update cart display to show decimal properly
-        function updateCartDisplay() {
-            const cartItems = document.getElementById('cartItems');
-            const cartSection = document.getElementById('cartSection');
-            const totalAmount = document.getElementById('totalAmount');
+      // Update cart display to show decimal properly
+      function updateCartDisplay() {
+          const cartItems = document.getElementById('cartItems');
+          const cartSection = document.getElementById('cartSection');
+          const subtotalAmount = document.getElementById('subtotalAmount');
+          const ppnAmount = document.getElementById('ppnAmount');
+          const totalAmount = document.getElementById('totalAmount');
 
-            if (cart.length === 0) {
-                cartSection.style.display = 'none';
-                return;
-            }
+          if (cart.length === 0) {
+              cartSection.style.display = 'none';
+              return;
+          }
 
-            cartSection.style.display = 'block';
+          cartSection.style.display = 'block';
 
-            let html = '';
-            let total = 0;
+          let html = '';
+          let subtotal = 0;
 
-            cart.forEach((item, index) => {
-                const unit = item.service.includes('Sepatu') ? 'pasang' :
-                    item.service.includes('Karpet') ? 'm²' : 'kg';
+          cart.forEach((item, index) => {
+              const unit = item.service.includes('Sepatu') ? 'pasang' :
+                  item.service.includes('Karpet') ? 'm²' : 'kg';
 
-                // Format weight to show decimal properly
-                const formattedWeight = item.weight % 1 === 0 ?
-                    item.weight.toString() :
-                    item.weight.toFixed(1).replace('.', ',');
+              const formattedWeight = item.weight % 1 === 0 ?
+                  item.weight.toString() :
+                  item.weight.toFixed(1).replace('.', ',');
 
-                html += `
-                    <tr>
-                        <td>${item.service}</td>
-                        <td>${formattedWeight} ${unit}</td>
-                        <td>Rp. ${item.price.toLocaleString('id-ID')}</td>
-                        <td>Rp. ${item.subtotal.toLocaleString('id-ID')}</td>
-                        <td>
-                            <button class="btn btn-danger" onclick="removeFromCart(${item.id})" style="padding: 5px 10px; font-size: 12px;">
-                                🗑️
-                            </button>
-                        </td>
-                    </tr>
-                `;
-                total += item.subtotal;
-            });
+              html += `
+            <tr>
+                <td>${item.service}</td>
+                <td>${formattedWeight} ${unit}</td>
+                <td>Rp. ${item.price.toLocaleString('id-ID')}</td>
+                <td>Rp. ${item.subtotal.toLocaleString('id-ID')}</td>
+                <td>
+                    <button class="btn btn-danger" onclick="removeFromCart(${item.id})" style="padding: 5px 10px; font-size: 12px;">
+                        🗑️
+                    </button>
+                </td>
+            </tr>
+        `;
+              subtotal += item.subtotal;
+          });
 
-            cartItems.innerHTML = html;
-            totalAmount.textContent = `Rp. ${total.toLocaleString('id-ID')}`;
-        }
+          ppn = 0.11 * subtotal;
+          let total = subtotal + ppn;
 
-        // Add some sample data for demonstration
-        async function loadDataTransactions() {
-            try {
-                const res = await fetch("{{ route('orders.getAllDataOrders') }}")
+          cartItems.innerHTML = html;
+          subtotalAmount.textContent = `Rp. ${subtotal.toLocaleString('id-ID')}`;
+          ppnAmount.textContent = `Rp. ${ppn.toLocaleString('id-ID')}`;
+          totalAmount.textContent = `Rp. ${total.toLocaleString('id-ID')}`;
+      }
 
-                if (!res.ok) {
-                    throw new Error(`HTTP error!! Status:${res.status}`);
-                }
+      // Add some sample data for demonstration
+      async function loadDataTransactions() {
+          try {
+              const res = await fetch("{{ route('orders.getAllDataOrders') }}")
 
-                const result = await res.json();
+              if (!res.ok) {
+                  throw new Error(`HTTP error!! Status:${res.status}`);
+              }
 
-                transactions = result;
-                transactionCounter = transactions.length + 1
-            } catch (error) {
-                console.error("Gagal Memuat Data Transaksi: ", error)
-            }
-            updateTransactionHistory();
-            updateStats();
-        }
-    </script>
+              const result = await res.json();
 
+              transactions = result;
+              transactionCounter = transactions.length + 1
+          } catch (error) {
+              console.error("Gagal Memuat Data Transaksi: ", error)
+          }
+          updateTransactionHistory();
+          updateStats();
+      }
+  </script>
