@@ -79,7 +79,7 @@
                 }
 
                 const result = await res.json();
-                  Swal.fire({
+                Swal.fire({
                     title: 'Berhasil!',
                     text: 'Transaksi Berhasil ditambahkan!!',
                     icon: 'success',
@@ -589,7 +589,14 @@
                 }
 
                 const result = await res.json();
-                alert("✅ Status Transaksi Berhasil diupdate!");
+                // alert("✅ Status Transaksi Berhasil diupdate!");
+                Swal.fire({
+                    title: 'Berhasil!',
+                    text: 'Status Transaksi Berhasil diupdate!!',
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false
+                })
                 loadDataTransactions();
                 closeModal();
                 // window.location.replace("{{ route('orders.index') }}");
